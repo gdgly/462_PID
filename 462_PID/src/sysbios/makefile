@@ -17,11 +17,11 @@ CCOPTS = --endian=little -mv7M4 --abi=eabi --float_support=fpv4spd16 -q -ms --op
 
 BIOS_INC = -I"/Users/JacobFaseler/ti/simplelink_msp432p4_sdk_3_30_00_13/kernel/tirtos/packages/"
 ANNEX_INCS = 
-INCS = $(BIOS_INC) $(ANNEX_INCS) -I"/Users/JacobFaseler/ti/simplelink_msp432p4_sdk_3_30_00_13/source/" -I"/Users/JacobFaseler/ti/simplelink_msp432p4_sdk_3_30_00_13/kernel/tirtos/packages/" -I"/Applications/ti/ccs920/xdctools_3_60_01_27_core/packages/" -I"../" -I"/packages//"  -I/Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.3.LTS/include 
+INCS = $(BIOS_INC) $(ANNEX_INCS) -I"/Users/JacobFaseler/ti/simplelink_msp432p4_sdk_3_30_00_13/source/" -I"/Users/JacobFaseler/ti/simplelink_msp432p4_sdk_3_30_00_13/kernel/tirtos/packages/" -I"/Applications/ti/ccs920/xdctools_3_60_01_27_core/packages/" -I"../" -I"/packages//"  -I/Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.4.LTS/include 
 
-CC = /Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.3.LTS/bin/armcl -c $(CCOPTS)
-ASM = /Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.3.LTS/bin/armcl -c $(CCOPTS)
-AR = /Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.3.LTS/bin/armar rq
+CC = /Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.4.LTS/bin/armcl -c $(CCOPTS)
+ASM = /Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.4.LTS/bin/armcl -c $(CCOPTS)
+AR = /Applications/ti/ccs920/ccs/tools/compiler/ti-cgt-arm_18.12.4.LTS/bin/armar rq
 
 DEL = rm -f
 CP = cp -f
