@@ -20,13 +20,13 @@
 #include <ti/sysbios/gates/GateMutex.h>
 #include <ti/sysbios/knl/Semaphore.h>
 #include <ti/sysbios/knl/Mailbox.h>
-#include <ti/sysbios/family/msp430/Hwi.h>
+#include <ti/sysbios/hal/Hwi.h>
 
 /* TI Drivers */
 #include "ti/drivers/UART.h"
 
 /* Board Header file */
-#include "Board.h"
+//#include "Board.h"
 
 /* Standard Includes */
 #include <string.h>
@@ -75,6 +75,8 @@ UART_Handle bc_uart;
 q_el_t bc_tx_q[TX_BUF_SIZE_BC];
 unsigned char bc_rx_q[RX_BUF_SIZE_BC];
 
+
+#ifdef foo
 
 /* TASK: BackChannelReadTask - Places user-input into queue until a \r
  * 								 is registered, interpreted and calls the
@@ -142,6 +144,8 @@ void BackChannelReadTask(UArg arg0, UArg arg1)
 		}
 	}
 }
+
+#endif
 
 
 /* TASK: BackChannelWriteTask - Constantly writes highest priority entry
@@ -296,6 +300,7 @@ Ser_Ret_t BcPuts(void* message, Ser_Mess_Pri_t priority)
 }
 
 
+#ifdef foo
 /*
  * InitializeSerialBlocks() - Uses TI drivers to configure HW USCI blocks
  * 							to operate in UART mode with desired performance:
@@ -323,7 +328,7 @@ void InitializeSerialBlocks (void)
 		System_abort("Error opening the bcUART");
 	}
 }
-
+#endif
 
 /* ConstructBackchannelWriteTask() - Construct task for reading from
  * 									backchannel UART connection

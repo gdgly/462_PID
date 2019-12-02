@@ -7,7 +7,7 @@
         <srcFile name="package/cfg/clock_pem4f.c"/>
     </sources>
     <configscripts>
-        <srcFile name="/Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/clock.cfg"/>
+        <srcFile name="/Users/JacobFaseler/Github/462_PID/462_PID/clock.cfg"/>
     </configscripts>
     <makefiles>
         <srcFile name="package.mak" src="package.bld"/>
@@ -44,7 +44,7 @@
         isPartial="false"
         xCfgScript="package/cfg/clock_pem4f.cfg"
         xCfgPrefix="package/cfg/clock_pem4f"
-        cfgScript="/Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/clock.cfg"
+        cfgScript="/Users/JacobFaseler/Github/462_PID/462_PID/clock.cfg"
         cfgArgs="null"
         />
     </configurations>
@@ -56,7 +56,7 @@
         profile="release"
         xCfgScript="package/cfg/clock_pem4f.cfg"
         xCfgPrefix="package/cfg/clock_pem4f"
-        cfgScript="/Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/clock.cfg"
+        cfgScript="/Users/JacobFaseler/Github/462_PID/462_PID/clock.cfg"
         cfgArgs="null"
         />
     </executables>

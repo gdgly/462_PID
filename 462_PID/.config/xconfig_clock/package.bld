@@ -11,7 +11,7 @@ var makeAssembly = false;
 var Executable = xdc.module('xdc.bld.Executable');
 
 var exeOpts = new Executable.Attrs({
-        cfgScript: '/Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/clock.cfg',
+        cfgScript: '/Users/JacobFaseler/Github/462_PID/462_PID/clock.cfg',
         profile: 'release',
         cfgHome: 'xconfig_clock',
 });
@@ -40,8 +40,8 @@ else {
 }
 
 var thisObj = {
-    cfg:        '/Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/clock.cfg',
-    outputPath: '/Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/.config/xconfig_clock',
+    cfg:        '/Users/JacobFaseler/Github/462_PID/462_PID/clock.cfg',
+    outputPath: '/Users/JacobFaseler/Github/462_PID/462_PID/.config/xconfig_clock',
     exeName:    'clock' + suffix,
     exeIntName: 'clock' + suffix.replace('.', '_'),
     targ:       targ,

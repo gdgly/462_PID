@@ -1,6 +1,6 @@
 #
 # This file was generated based on the configuration script:
-#     /Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/clock.cfg
+#     /Users/JacobFaseler/Github/462_PID/462_PID/clock.cfg
 #
 # This makefile may be included in other makefiles that need to build
 # the libraries containing the compiled source files generated as
@@ -14,7 +14,7 @@
 #
 # The absolute path to the generated source directory (at the time the
 # sources were generated) is:
-#    /Users/JacobFaseler/Github/462_PID/clock_MSP_EXP432P401R_tirtos_ccs/src
+#    /Users/JacobFaseler/Github/462_PID/462_PID/src
 #
 GEN_SRC_DIR ?= ../src
 

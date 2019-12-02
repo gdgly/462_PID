@@ -10,11 +10,6 @@
 /* Include own header */
 #include "SourceCode/myADC.h"
 
-/* ADC Mutex Resources */
-GateMutex_Struct adc_mut_struct;
-GateMutex_Params adc_mut_params;
-GateMutex_Handle adc_mutex;
-
 /*
  * ConstructADCmutex() - Self-descriptive
  * Params: none
@@ -30,47 +25,66 @@ void ConstructADCmutex(void)
 
 /*
  * initADCs() - Configures ADC Block and derives meaning for handle
- * 					Using driverlib
+ *                  Using driverlib
  * Params: base_addr - Base address of the ADC
  * Return: none
  */
-void InitializeADCs (uint16_t base_address)
+void InitializeADCs()
 {
-	bool success;
-	ADC12_A_configureMemoryParam adc_param = {0};
+    ADC_init();
+    ADC_Params_init(&adc_parms);
+    adc = ADC_open(CONFIG_ADC_0, &adc_parms);
 
-	/* Allowing ADC interrupts breaks RTOS */
-	ADC12_A_disableInterrupt(base_address, 0xFFFF);
+    /* Make sure ADC Initializes */
+    if (adc == NULL)
+    {
+        System_printf("ADC Failed to initialize");
+        System_flush();
 
-	/* Initialize block, exception on failure */
-	success = ADC12_A_init(base_address,
-							ADC12_A_SAMPLEHOLDSOURCE_SC,
-							ADC12_A_CLOCKSOURCE_MCLK,
-							ADC12_A_CLOCKDIVIDER_32);
-	if (success == STATUS_FAIL)
-	{
-		System_abort("Error: myADC/initADCs - success");
-	}
-
-	/* Enable block */
-	ADC12_A_enable(base_address);
-
-	/* Setup sampling timer to take single samples
-	 * */
-	ADC12_A_setupSamplingTimer(base_address,
-								ADC12_A_CYCLEHOLD_1024_CYCLES,
-								ADC12_A_CYCLEHOLD_4_CYCLES,
-								ADC12_A_MULTIPLESAMPLESDISABLE);
-
-	/* Input to mem buf w/ ref v's */
-	adc_param.memoryBufferControlIndex = ADC12_A_MEMORY_0;
-	adc_param.inputSourceSelect = ADC12_A_INPUT_A0;
-	adc_param.positiveRefVoltageSourceSelect = ADC12_A_VREFPOS_AVCC;
-	adc_param.negativeRefVoltageSourceSelect = ADC12_A_VREFNEG_AVSS;
-	adc_param.endOfSequence = ADC12_A_NOTENDOFSEQUENCE;
-	ADC12_A_configureMemory(base_address, &adc_param);
+    }
+    else
+    {
+        System_printf("ADC Initialized");
+        System_flush();
+    }
 }
 
+
+/*
+ * readADC() - Thread-safe access to ADC Block
+ *                  Using TI kernel-aware drivers
+ * Params:  adc - symbolic reference to active
+ *                hardware block (Handle)
+ *          value_out - pointer to data destination
+ *
+ * Return: uint16_t adcValue - Value read from the ADC
+ */
+uint16_t readADC(ADC_Handle adc, uint_fast16_t *value_out)
+{
+    int_fast16_t res;
+    IArg key;
+
+    /* Thread Safe Access */
+    key = GateMutex_enter(adc_mutex);
+
+    /* Business End */
+    res = ADC_convert(adc, (uint16_t *)value_out);
+    if (res == ADC_STATUS_SUCCESS)
+    {
+        //System_printf("\r\n ADC Reads: %d", *value_out);
+    }
+    else
+    {
+        System_printf("Something's Gone terribly wrong");
+    }
+
+    /* Allow other threads access */
+    GateMutex_leave(adc_mutex,key);
+
+    return *value_out;
+}
+
+#ifdef foo
 
 /*
  * readADC() - Thread-safe access to ADC Block
@@ -106,3 +120,50 @@ uint16_t readADC(uint16_t base_address, uint8_t index){
 
 	return result;
 }
+
+#endif
+
+#ifdef OLD_ADC
+/*
+ * initADCs() - Configures ADC Block and derives meaning for handle
+ *                  Using driverlib
+ * Params: base_addr - Base address of the ADC
+ * Return: none
+ */
+void InitializeADCs (uint16_t base_address)
+{
+    bool success;
+    ADC12_A_configureMemoryParam adc_param = {0};
+
+    /* Allowing ADC interrupts breaks RTOS */
+    ADC12_A_disableInterrupt(base_address, 0xFFFF);
+
+    /* Initialize block, exception on failure */
+    success = ADC12_A_init(base_address,
+                            ADC12_A_SAMPLEHOLDSOURCE_SC,
+                            ADC12_A_CLOCKSOURCE_MCLK,
+                            ADC12_A_CLOCKDIVIDER_32);
+    if (success == STATUS_FAIL)
+    {
+        System_abort("Error: myADC/initADCs - success");
+    }
+
+    /* Enable block */
+    ADC12_A_enable(base_address);
+
+    /* Setup sampling timer to take single samples
+     * */
+    ADC12_A_setupSamplingTimer(base_address,
+                                ADC12_A_CYCLEHOLD_1024_CYCLES,
+                                ADC12_A_CYCLEHOLD_4_CYCLES,
+                                ADC12_A_MULTIPLESAMPLESDISABLE);
+
+    /* Input to mem buf w/ ref v's */
+    adc_param.memoryBufferControlIndex = ADC12_A_MEMORY_0;
+    adc_param.inputSourceSelect = ADC12_A_INPUT_A0;
+    adc_param.positiveRefVoltageSourceSelect = ADC12_A_VREFPOS_AVCC;
+    adc_param.negativeRefVoltageSourceSelect = ADC12_A_VREFNEG_AVSS;
+    adc_param.endOfSequence = ADC12_A_NOTENDOFSEQUENCE;
+    ADC12_A_configureMemory(base_address, &adc_param);
+}
+#endif

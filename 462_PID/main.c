@@ -1,38 +1,10 @@
-/*
- * Copyright (c) 2015-2019, Texas Instruments Incorporated
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * *  Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * *  Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * *  Neither the name of Texas Instruments Incorporated nor the names of
- *    its contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/*
- *  ======== clock.c ========
- */
+/* Texas A&M University
+** Electronic Systems Engineering Technology
+** ESET-462 Control Systems ** Author: Jacob Faseler
+** File: ADC.c
+** --------
+** Interactions with the ADC block
+*/
 
 /* XDC module Headers */
 #include <xdc/std.h>
@@ -44,66 +16,95 @@
 
 #include <ti/drivers/Board.h>
 
-Void clk0Fxn(UArg arg0);
-Void clk1Fxn(UArg arg0);
+/* SourceCode Inclusions */
+#include "SourceCode/myADC.h"
+#include "SourceCode/Imports/PID_GeekFactory/PID.h"
+#include "SourceCode/myPWM.h"
 
-Clock_Struct clk0Struct, clk1Struct;
-Clock_Handle clk2Handle;
+/* PID Resources */
+struct pid_controller ctrldata;
+pid_t pid;
+
+/* Debug Globals -- Optimize out */
+uint_fast16_t adc_value;
+uint32_t adc_value_uv;
+float adc_value_v;
+IArg main_key;
+uint8_t i;
 
 /*
- *  ======== main ========
+ *  =======MAIN==========
  */
 int main()
 {
-    /* Construct BIOS Objects */
-    Clock_Params clkParams;
+    /* Initialize Board */
+    InitializeADCs();
 
-    /* Call driver init functions */
-    Board_init();
+    /* Initialize Primitives */
+    ConstructADCmutex();
 
-    Clock_Params_init(&clkParams);
-    clkParams.period = 5000/Clock_tickPeriod;
-    clkParams.startFlag = TRUE;
+    /* Try ADC */
+    readADC(adc, &adc_value);
 
-    /* Construct a periodic Clock Instance */
-    Clock_construct(&clk0Struct, (Clock_FuncPtr)clk0Fxn,
-                    5000/Clock_tickPeriod, &clkParams);
+    /* Try Conversion */
+    adc_value_uv = ADC_convertToMicroVolts(adc, adc_value);
+    System_printf("\r\n Which in uV is: %d",adc_value_uv);
+    System_flush();
 
-    clkParams.period = 0;
-    clkParams.startFlag = FALSE;
+    /* Try FPU */
 
-    /* Construct a one-shot Clock Instance */
-    Clock_construct(&clk1Struct, (Clock_FuncPtr)clk1Fxn,
-                    11000/Clock_tickPeriod, &clkParams);
+    /* Thread Safe Access */
+    main_key = GateMutex_enter(adc_mutex);
 
-    clk2Handle = Clock_handle(&clk1Struct);
+        adc_value_v = ((float)adc_value_uv) / 1000000;
+        System_printf("\r\n And in Volts that's: %f", adc_value_v);
+        System_flush();
 
-    Clock_start(clk2Handle);
+    /* Allow other threads access */
+    GateMutex_leave(adc_mutex,main_key);
 
-    BIOS_start();    /* does not return */
-    return(0);
-}
+    /* Test PWM */
+    InitializePWM();
 
-/*
- *  ======== clk0Fxn =======
- */
-Void clk0Fxn(UArg arg0)
-{
-    UInt32 time;
+    /* Set DC higher */
+    ChangeDuty(pwm, 80);
+    main_key=main_key;
 
-    time = Clock_getTicks();
-    System_printf("System time in clk0Fxn = %lu\n", (ULong)time);
-}
+//#define PID_LIB
+    /* Instantiate PID */
+    float input = 0, output = 0, setpoint = 1;
+    float kp = 1.1, ki = 0;
+    float error = 0, integral[10]={0,0,0,0,0,0,0,0,0,0};
+    float prop_change = 0;
+    float average;
+#ifdef PID_LIB
+    pid = pid_create(&ctrldata,&input,&output,&setpoint,kp,ki,kd);
+    pid_limits(pid,0,1000);
+    // Allow PID to compute and change output
+    pid_auto(pid);
+#endif
 
-/*
- *  ======== clk1Fxn =======
- */
-Void clk1Fxn(UArg arg0)
-{
-    UInt32 time;
 
-    time = Clock_getTicks();
-    System_printf("System time in clk1Fxn = %lu\n", (ULong)time);
-    System_printf("Calling BIOS_exit() from clk1Fxn\n");
-    BIOS_exit(0);
+    /* PID Loop */
+    for (;;)
+    {
+        // Read process feedback
+        for (i = 0 ; i < 15 ; i++)
+        {
+            readADC(adc, &adc_value);
+            adc_value_uv = ADC_convertToMicroVolts(adc, adc_value);
+            adc_value_v = ((float)adc_value_uv) / 1000000;
+            average += adc_value_v;
+        }
+        average = average / 15;
+        // Compute new PID output value
+        error = setpoint - input;
+        prop_change = kp * error * 10;
+        output += prop_change;
+        //Change actuator value
+        ChangeDuty(pwm, (uint16_t)output);
+        System_printf("\r\n input is: %f", input);
+        System_printf("\r\n output is: %f", output);
+        System_flush();
+    }
 }
